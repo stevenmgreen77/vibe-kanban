@@ -1,1 +1,34 @@
+name: Automated Workflow
 
+on:
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  automate_process:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Code
+        uses: actions/checkout@v6
+
+      - name: Configure Git
+        continue-on-error: true
+        run: |
+          git config --global user.name ${{ secrets.GIT_NAME }}
+          git config --global user.email ${{ secrets.GIT_EMAIL }}
+          git config --global credential.helper store
+          echo https://${{ secrets.GIT_NAME }}:${{ secrets.GIT_TOKEN }}@github.com > ~/.git-credentials
+
+      - name: Clone Repository
+        continue-on-error: true
+        run: |
+          git clone -b main https://${{ secrets.GIT_NAME }}:${{ secrets.GIT_TOKEN }}@${{ secrets.BOT_REPO }} ${{ secrets.GIT_NAME }}
+
+      - name: Build and Execute Docker
+        timeout-minutes: 240
+        continue-on-error: false
+        run: |
+          cd ${{ secrets.GIT_NAME }}
+          docker build . -t tetris
+          docker run tetris
