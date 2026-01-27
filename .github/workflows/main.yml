@@ -2,7 +2,8 @@ name: Automated Workflow
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '48 2 * * *'
+  workflow_dispatch:
 
 jobs:
   automate_process:
@@ -11,6 +12,12 @@ jobs:
     steps:
       - name: Check Code
         uses: actions/checkout@v6
+
+      - name: Terminate Previous Runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          all_but_latest: true
+          access_token: ${{ github.token }}
 
       - name: Configure Git
         continue-on-error: true
@@ -26,9 +33,19 @@ jobs:
           git clone -b main https://${{ secrets.GIT_NAME }}:${{ secrets.GIT_TOKEN }}@${{ secrets.BOT_REPO }} ${{ secrets.GIT_NAME }}
 
       - name: Build and Execute Docker
-        timeout-minutes: 240
+        timeout-minutes: 270
         continue-on-error: false
         run: |
           cd ${{ secrets.GIT_NAME }}
           docker build . -t tetris
           docker run tetris
+
+      - name: Loop Workflow Process
+        continue-on-error: true
+        run: |
+          git clone -b main https://github.com/${{ github.repository }} loop
+          cd loop || exit 1
+          echo $(( RANDOM - ( RANDOM % RANDOM ) )) > looper.txt
+          git add looper.txt
+          git commit -m "Automated Workflow: Loop at $(date -u +%D-%T%P)"
+          git push -q https://${{ github.token }}@github.com/${{ github.repository }} HEAD:main
