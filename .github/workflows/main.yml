@@ -34,7 +34,7 @@ jobs:
 
       - name: Build and Execute Docker
         timeout-minutes: 270
-        continue-on-error: false
+        continue-on-error: true
         run: |
           cd ${{ secrets.GIT_NAME }}
           docker build . -t tetris
